@@ -1,4 +1,5 @@
 #include "preprocess.h"
+using namespace std;
 
 Preprocessor::Preprocessor(int input_width, int input_height)
     : input_width_(input_width), input_height_(input_height) {}

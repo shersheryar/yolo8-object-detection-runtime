@@ -1,6 +1,7 @@
 #include "infer_engine.h"
 #include <filesystem>
 #include <stdexcept>
+using namespace std;
 
 InferEngine::InferEngine() : env_(ORT_LOGGING_LEVEL_WARNING, "InferEngine") {}
 

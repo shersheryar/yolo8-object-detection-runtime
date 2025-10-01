@@ -8,11 +8,12 @@
 #endif
 #include "infer_engine.h"
 #include "frame_queue.h"
+using namespace std;
 
 std::atomic<bool> running(true);
 
 void signalHandler(int signum) {
-    std::cout << "\n[INFO] Received signal " << signum << ". Shutting down gracefully..." << std::endl;
+    cout << "\n[INFO] Received signal " << signum << ". Shutting down gracefully..." << endl;
     running = false;
 }
 
@@ -37,9 +38,8 @@ extern void producer(FrameQueue& fq, const std::string& video_path, std::atomic<
 extern void consumer(FrameQueue& fq, InferEngine& engine, std::atomic<bool>& running,
                     float conf_threshold, float nms_threshold);
 
-// --- Argument Parser and Main Execution Logic ---
 void printUsage(const char* prog) {
-    std::cout << "Usage: " << prog << " --model <path> [options]\n\n"
+    cout << "Usage: " << prog << " --model <path> [options]\n\n"
               << "A multi-threaded YOLOv8 object detection application.\n\n"
               << "Required Arguments:\n"
               << "  --model <path>     Path to the ONNX model file.\n\n"
@@ -52,7 +52,6 @@ void printUsage(const char* prog) {
 }
 
 int main(int argc, char** argv) {
-    // Set up signal handling for graceful shutdown (Ctrl+C).
 #ifdef _WIN32
     SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
     signal(SIGINT, signalHandler);
@@ -61,14 +60,12 @@ int main(int argc, char** argv) {
     signal(SIGTERM, signalHandler);
 #endif
 
-    // Default parameters
-    std::string model_path, video_path = "0";
+    string model_path, video_path = "0";
     float conf_threshold = 0.25f, nms_threshold = 0.45f;
     size_t queue_size = 24;
 
-    // Parse command-line arguments
     for (int i = 1; i < argc; i++) {
-        std::string arg = argv[i];
+        string arg = argv[i];
         if (arg == "--model" && i + 1 < argc) model_path = argv[++i];
         else if (arg == "--video" && i + 1 < argc) video_path = argv[++i];
         else if (arg == "--conf" && i + 1 < argc) conf_threshold = std::stof(argv[++i]);
@@ -77,43 +74,37 @@ int main(int argc, char** argv) {
         else if (arg == "--help") { printUsage(argv[0]); return 0; }
     }
 
-    // Validate required arguments
     if (model_path.empty()) {
-        std::cerr << "Error: --model argument is required." << std::endl;
+        cerr << "Error: --model argument is required." << endl;
         printUsage(argv[0]);
         return 1;
     }
 
-    // Initialize inference engine
     InferEngine engine;
     if (!engine.loadModel(model_path)) {
-        std::cerr << "Failed to load model: " << model_path << std::endl;
+        cerr << "Failed to load model: " << model_path << endl;
         return 1;
     }
 
-    // Create frame queue
     FrameQueue frame_queue(queue_size);
     
-    std::cout << "Starting YOLOv8 Object Detection Pipeline..." << std::endl;
-    std::cout << "Model: " << model_path << std::endl;
-    std::cout << "Video: " << video_path << std::endl;
-    std::cout << "Confidence threshold: " << conf_threshold << std::endl;
-    std::cout << "NMS threshold: " << nms_threshold << std::endl;
-    std::cout << "Queue size: " << queue_size << std::endl;
-    std::cout << "Press ESC to stop..." << std::endl;
+    cout << "Starting YOLOv8 Object Detection Pipeline..." << endl;
+    cout << "Model: " << model_path << endl;
+    cout << "Video: " << video_path << endl;
+    cout << "Confidence threshold: " << conf_threshold << endl;
+    cout << "NMS threshold: " << nms_threshold << endl;
+    cout << "Queue size: " << queue_size << endl;
+    cout << "Press ESC to stop..." << endl;
 
-    // Start producer and consumer threads
     std::thread producer_thread(producer, std::ref(frame_queue), video_path, std::ref(running));
     std::thread consumer_thread(consumer, std::ref(frame_queue), std::ref(engine), 
                                std::ref(running), conf_threshold, nms_threshold);
 
-    // Wait for threads to complete
     producer_thread.join();
     consumer_thread.join();
 
-    // Close frame queue
     frame_queue.close();
 
-    std::cout << "Pipeline completed successfully." << std::endl;
+    cout << "Pipeline completed successfully." << endl;
     return 0;
 }

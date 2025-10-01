@@ -1,4 +1,5 @@
 #include "../headers/frame_queue.h"
+using namespace std;
 
 FrameQueue::FrameQueue(size_t max_size)
     : max_size(max_size), closed(false) {}
